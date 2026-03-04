@@ -227,8 +227,9 @@ function renderChart(idx, title, h, binSize, startYr, endYr) {
   var cell = document.getElementById('cell' + idx);
   if (charts[idx]) charts[idx].destroy();
 
-  cell.innerHTML = '<canvas id="canvas' + idx + '"></canvas>' +
-    '<div class="stats"><b>' + title + '</b><br>' +
+  cell.innerHTML = '<div style="font-size:1.1rem;font-weight:700;color:#333;margin-bottom:4px;">' + title + '</div>' +
+    '<canvas id="canvas' + idx + '"></canvas>' +
+    '<div class="stats">' +
     (startYr && endYr ? startYr + '\u2013' + endYr + ' ' : '') +
     '(' + h.n + ' windows)<br>' +
     'Mean: ' + h.mean.toFixed(1) + '% &nbsp; Std: ' + h.std.toFixed(1) + '%<br>' +
@@ -238,20 +239,16 @@ function renderChart(idx, title, h, binSize, startYr, endYr) {
   var pct = h.pct;
   var range = bins[bins.length-1] - bins[0];
   var nBins = bins.length;
-  // Aim for ~12-15 labels max regardless of range
+  // Aim for ~12-15 visible labels max
   var labelStep;
-  if (binSize >= 10) labelStep = binSize;
-  else {
-    var target = Math.ceil(range / 12);
-    // Round target up to a "nice" number
-    if (target <= 1) labelStep = binSize <= 2 ? 5 : binSize;
-    else if (target <= 5) labelStep = 5;
-    else if (target <= 10) labelStep = 10;
-    else if (target <= 25) labelStep = 25;
-    else if (target <= 50) labelStep = 50;
-    else if (target <= 100) labelStep = 100;
-    else if (target <= 250) labelStep = 250;
-    else labelStep = 500;
+  var niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+  // Pick smallest nice step that gives <= 15 labels
+  labelStep = niceSteps[niceSteps.length - 1];
+  for (var si = 0; si < niceSteps.length; si++) {
+    if (niceSteps[si] >= binSize && range / niceSteps[si] <= 15) {
+      labelStep = niceSteps[si];
+      break;
+    }
   }
 
   var labels = bins.map(function(b) { return b % labelStep === 0 ? b + '%' : ''; });
@@ -314,7 +311,7 @@ function renderChart(idx, title, h, binSize, startYr, endYr) {
       scales: {
         x: {
           title: { display: true, text: 'Real 12-Month Return (%)', font: { size: 10 } },
-          ticks: { font: { size: 8 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 20 },
+          ticks: { font: { size: 8 }, maxRotation: 0, autoSkip: false },
           grid: { display: false },
         },
         y: {
